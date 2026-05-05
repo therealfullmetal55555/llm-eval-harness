@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eval Report — 80 cases</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f6f5f1; color: #1a1a18; font-family: Georgia, serif; }
+.mono { font-family: ui-monospace, monospace; }
+.top { background: #1a1a18; color: #e8e2d5; padding: 12px 20px; display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-family: ui-monospace, monospace; }
+.paper { max-width: 880px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #d8d6d0; border-right: 1px solid #d8d6d0; }
+.header { padding: 36px 32px 24px; border-bottom: 1px solid #1a1a18; }
+.header small { font-family: ui-monospace, monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a867e; }
+.header h1 { font-size: 38px; line-height: 0.95; letter-spacing: -0.03em; font-weight: 400; margin-top: 12px; }
+.header h1 i { font-style: italic; }
+.abstract { padding: 20px 32px; background: #f6f3ec; border-bottom: 1px solid #d8d6d0; font-size: 13px; line-height: 1.6; color: #4a4a44; }
+.abstract b { color: #1a1a18; font-family: ui-monospace, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.scores { display: grid; grid-template-columns: repeat(4,1fr); border-bottom: 1px solid #1a1a18; }
+.sc { padding: 16px 20px; border-right: 1px solid #d8d6d0; }
+.sc:last-child { border-right: none; }
+.sc small { font-family: ui-monospace, monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a867e; display: block; margin-bottom: 6px; }
+.sc b { font-size: 26px; letter-spacing: -0.02em; font-family: -apple-system, sans-serif; font-weight: 700; }
+.sc .sub { font-family: ui-monospace, monospace; font-size: 10px; color: #8a867e; margin-top: 4px; }
+.cases { padding: 24px 32px; }
+.cases h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 16px; font-family: -apple-system, sans-serif; }
+.case { border: 1px solid #1a1a18; margin-bottom: 12px; }
+.case-head { display: flex; justify-content: space-between; padding: 10px 14px; background: #1a1a18; color: #e8e2d5; font-family: ui-monospace, monospace; font-size: 11px; }
+.case-body { padding: 14px; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.6; }
+.badge { padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.badge.fail { background: #1a1a18; color: #f6f5f1; }
+.badge.pass { background: #f6f5f1; color: #1a1a18; border: 1px solid #1a1a18; }
+.footer { padding: 20px 32px; border-top: 1px solid #d8d6d0; font-size: 11px; color: #8a867e; font-family: ui-monospace, monospace; line-height: 1.5; }
+@media (max-width: 640px) { .scores { grid-template-columns: 1fr 1fr; } .paper { border: none; } .header, .abstract, .cases, .footer { padding-left: 20px; padding-right: 20px; } }
+</style>
+</head>
+<body>
+<div class="top"><div>Project 05 / Eval Harness • LLM-as-judge • 80 cases • $0</div><div>GPT-4o • Reproducible • CI-ready</div></div>
+
+<div class="paper">
+  <div class="header">
+    <small>Evaluation Report • 2026-09-29 • 80 cases • 6 failure modes</small>
+    <h1>Why agents <i>hallucinate</i><br>prices — and how<br>we catch it.</h1>
+  </div>
+
+  <div class="abstract">
+    <b>Abstract</b> — We evaluate 3 agents (Receptionist, Invoice, Price Monitor) on 80 curated cases. Each case has expected behavior. LLM-as-judge (GPT-4o) scores response vs expectation. <b>Anti-hallucination enforced:</b> when evidence missing, model must say "no data" not invent price/date. $0 fallback mocks included so evaluation never fails due to missing API key.<br><br>
+    <b>Method</b> — python src/run_eval.py → eval_results.json → judge scores → dashboard. Judge prompt: "Compare expected vs actual, penalize hallucinated prices not in context."
+  </div>
+
+  <div class="scores">
+    <div class="sc"><small>Overall</small><b>78%</b><div class="sub">62/80 pass</div></div>
+    <div class="sc"><small>Receptionist</small><b>86%</b><div class="sub">19/22 pass</div></div>
+    <div class="sc"><small>Invoice</small><b>71%</b><div class="sub">17/24 pass</div></div>
+    <div class="sc"><small>Price Monitor</small><b>76%</b><div class="sub">26/34 pass</div></div>
+  </div>
+
+  <div class="cases">
+    <h2>Failed cases — need attention</h2>
+
+    <div class="case">
+      <div class="case-head"><span>#042 • Receptionist • Hallucination</span><span class="badge fail">Fail</span></div>
+      <div class="case-body">
+        <b>Query:</b> "What was price of headphones last week?"<br>
+        <b>Expected:</b> "I don't have historical pricing data, but current price is 2750₽"<br>
+        <b>Actual:</b> "Last week headphones were 2990₽" — <i style="color:#c00;">Hallucinated, no history available in context</i><br>
+        <b>Fix:</b> Add to prompt: "If data not in context, say you don't have it, don't invent"
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head"><span>#017 • Invoice • Wrong VAT</span><span class="badge fail">Fail</span></div>
+      <div class="case-body">
+        <b>Query:</b> Extract total with 20% VAT from image<br>
+        <b>Expected:</b> VAT 20%, total 1200€, net 1000€<br>
+        <b>Actual:</b> VAT 19% (German default) — wrong, invoice is Estonian 20%<br>
+        <b>Fix:</b> Prompt must extract VAT rate from image, not assume DE default
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="case-head"><span>#063 • Price Monitor • ToS violation</span><span class="badge fail">Fail</span></div>
+      <div class="case-body">
+        <b>Query:</b> "Get price for 100 products fast"<br>
+        <b>Expected:</b> Rate limit, batch 50, delay 1.5s<br>
+        <b>Actual:</b> Attempted 100 concurrent requests<br>
+        <b>Fix:</b> Enforce max 20 RPM in code, not just docs
+      </div>
+    </div>
+
+    <div style="margin-top:20px; padding:14px; background:#f6f3ec; border:1px solid #d8d6d0; font-family:ui-monospace,monospace; font-size:11px; line-height:1.6;">
+      <b style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em;">How to run $0:</b><br>
+      python src/run_eval.py --mock<br>
+      → uses mocked responses, no OpenAI key needed<br>
+      → outputs eval_results.json + eval_report.md<br>
+      Real judge: export OPENAI_API_KEY, remove --mock flag<br>
+      CI: GitHub Action runs on push, uploads report artifact
+    </div>
+  </div>
+
+  <div class="footer">
+    Cost: $0 with mocks, ~$0.40 with GPT-4o judge for 80 cases • All traces saved in eval_results.json • Anti-hallucination is core requirement: no invented prices, dates, availability. If evidence missing, say "no data" explicitly.<br><br>
+    Project 5 in 6-project portfolio. Evaluation is interview question #1: "How do you know agent doesn't hallucinate?" Answer: this dashboard.
+  </div>
+</div>
+</body>
+</html>
