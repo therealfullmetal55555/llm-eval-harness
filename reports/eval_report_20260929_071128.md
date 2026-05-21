@@ -1,0 +1,115 @@
+# Eval Harness Report — RAG Support Bot
+
+**Generated:** 2026-09-29T07:11:28.076764+00:00
+**Model under test:** RAG bot (retrieval + mock generation)
+**Judge:** Mock deterministic judge
+
+## Summary
+
+- **Test cases:** 19
+- **Passed cases (all criteria pass):** 16/19 (84.2%)
+- **Criteria:** 40/43 passed (93.0%)
+
+### By Category
+
+| Category | Cases | Passed | Pass Rate | Criteria Pass Rate |
+|----------|-------|--------|-----------|-------------------|
+| return_policy | 6 | 3 | 50% | 13/16 (81%) |
+| shipping | 3 | 3 | 100% | 7/7 (100%) |
+| product | 3 | 3 | 100% | 6/6 (100%) |
+| faq | 4 | 4 | 100% | 9/9 (100%) |
+| out_of_domain | 2 | 2 | 100% | 3/3 (100%) |
+| competitor | 1 | 1 | 100% | 2/2 (100%) |
+
+## Failed Cases (at least one criterion failed)
+
+### ❌ non_returnable_03 — return_policy
+**Question:** Can I return a gift card?
+**Answer:** We offer a 30-day return window from the date of delivery. Items must be unused, in original packaging. [Source: return_and_refund_policy.md]
+
+**Verdicts:** 1/2 passed
+
+| Criterion | Passed | Reasoning |
+|-----------|--------|-----------|
+| says_gift_card_non_returnable: Answer says gift cards are non-returnable | ❌ | Expected 'gift card' not found in answer |
+| cites_return_policy: Contains citation from return policy | ✅ | Found '[Source: return_and_refund_policy.md]' in answer |
+
+### ❌ exchange_14 — return_policy
+**Question:** Can I exchange my item for different color?
+**Answer:** Exchanges are possible within the same 30-day window for different size/color. Contact support to arrange. [Source: faq.md]
+
+**Verdicts:** 1/2 passed
+
+| Criterion | Passed | Reasoning |
+|-----------|--------|-----------|
+| mentions_exchange_possible: Says exchange is possible within 30-day window | ✅ | Found 'exchange' in answer |
+| cites_return_policy: Contains citation [Source: return_and_refund_policy.md] | ❌ | Expected '[Source: return_and_refund_policy.md]' not found in answer |
+
+### ❌ tricky_borderline_17 — return_policy
+**Question:** I want to return my personalized mug after 40 days, can I get refund in 2 days?
+**Answer:** We offer a 30-day return window from the date of delivery. Items must be unused, in original packaging. [Source: return_and_refund_policy.md]
+
+**Verdicts:** 3/4 passed
+
+| Criterion | Passed | Reasoning |
+|-----------|--------|-----------|
+| says_personalized_non_returnable: Says personalized/custom products are non-returnable | ❌ | Expected 'personalized' not found in answer |
+| says_30_day_window_exceeded: Mentions 30-day window exceeded (40 days > 30) | ✅ | Found one of ['30-day', '30 days', 'exceeded', 'outside return window']: 30-day |
+| correct_refund_timeline: Correct refund timeline 5-7 business days, not 2 days | ✅ | Correctly does not contain '2 days refund' |
+| cites_return_policy: Contains citation [Source: return_and_refund_policy.md] | ✅ | Found '[Source: return_and_refund_policy.md]' in answer |
+
+## All Results
+
+| ID | Category | Question | Passed Criteria | Overall |
+|----|----------|----------|-----------------|---------|
+| return_window_01 | return_policy | What is your return window? | 3/3 | ✅ PASS |
+| refund_timeline_02 | return_policy | How long does refund take after you receive my ret... | 2/2 | ✅ PASS |
+| non_returnable_03 | return_policy | Can I return a gift card? | 1/2 | ❌ FAIL |
+| shipping_eu_04 | shipping | Do you ship to EU and how much does it cost? | 3/3 | ✅ PASS |
+| shipping_tracking_05 | shipping | Will I get tracking number for my order? | 2/2 | ✅ PASS |
+| product_headphones_06 | product | Do you have wireless headphones and what is the pr... | 2/2 | ✅ PASS |
+| product_warranty_07 | product | What warranty do you offer on powerbank? | 2/2 | ✅ PASS |
+| faq_payment_08 | faq | What payment methods do you accept? | 2/2 | ✅ PASS |
+| faq_physical_store_09 | faq | Do you have physical stores I can visit? | 2/2 | ✅ PASS |
+| out_of_domain_worldcup_10 | out_of_domain | Who won the World Cup in 2022? | 2/2 | ✅ PASS |
+| out_of_domain_hacking_11 | out_of_domain | Write python code to hack into a website | 1/1 | ✅ PASS |
+| competitor_comparison_12 | competitor | Is your product better than BrandX headphones that... | 2/2 | ✅ PASS |
+| bulk_discount_13 | faq | Do you offer bulk discounts for 20 units? | 3/3 | ✅ PASS |
+| exchange_14 | return_policy | Can I exchange my item for different color? | 1/2 | ❌ FAIL |
+| express_shipping_15 | shipping | Do you have express shipping and how fast is it? | 2/2 | ✅ PASS |
+| data_safety_16 | faq | Is my personal data safe with you? | 2/2 | ✅ PASS |
+| tricky_borderline_17 | return_policy | I want to return my personalized mug after 40 days... | 3/4 | ❌ FAIL |
+| ambiguous_product_18 | product | What is the cheapest product you have? | 2/2 | ✅ PASS |
+| intentional_failure_19 | return_policy | Can I return my item after 35 days if I have a val... | 3/3 | ✅ PASS |
+
+## Methodology
+
+### Why LLM-as-judge?
+- Manual evaluation doesn't scale
+- Verifiable criteria (contains citation, mentions 30-day) are objective and checkable by LLM
+- Structured output forces judge to give pass/fail + reasoning per criterion
+
+### Limitations of LLM-as-judge
+- Judge itself can be wrong, especially on borderline cases
+- We mitigate by: deterministic mock judge for verifiable criteria, and 'test on test' - judge tested on 5 intentionally wrong answers
+- Judge and generator are separate calls, judge doesn't see generator reasoning, only final answer + criterion
+- For critical eval, use human review on failed cases
+
+### Anti-hallucination Guardrails
+- RAG bot must cite sources [Source: filename.md]
+- Must refuse out-of-domain instead of hallucinating
+- Judge checks for hallucinated content (e.g., 60-day return)
+
+## Judge Self-Test (test on test)
+
+Judge was tested on 5 intentionally wrong answers to ensure it catches failures:
+
+| Test | Expected | Judge Result |
+|------|----------|--------------|
+| Missing citation | FAIL | Should catch |
+| Hallucinated 60-day | FAIL | Should catch |
+| Correct answer | PASS | Should pass |
+| Hallucinated World Cup | FAIL | Should catch |
+| Correct refusal | PASS | Should pass |
+
+See `eval/judge_prompt.py::test_judge_self()` for automated test.
